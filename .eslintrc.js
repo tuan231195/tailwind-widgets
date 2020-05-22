@@ -28,7 +28,10 @@ module.exports = {
   rules: {
     'jest/no-identical-title': 'error',
     'jest/valid-expect': 'error',
-    '@typescript-eslint/no-explicit-any': 'off'
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-use-before-define': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
   },
   settings: {
     react: {

@@ -1,12 +1,32 @@
-import * as React from 'react'
+import * as React from 'react';
+import { Icon } from './components/Icon';
+import { Select } from './components/Select';
+import { useState } from 'react';
+
 const App: React.FC = () => {
-  return (
-    <div className="text-center font-sans">
-      <header className="bg-gray-600 m-6 p-6 rounded shadow-lg">
-        <h1 className="text-white text-3xl">This is a React app</h1>
-      </header>
-      <p className="text-base">This app has been build using React & TypeScript</p>
-    </div>
-  )
-}
-export default App
+    const [value, setValue] = useState(null);
+    return (
+        <>
+            <Select
+                value={value}
+                onChange={(e, { value }) => setValue(value)}
+                options={[
+                    {
+                        option: 'JavaScript',
+                        value: 'js',
+                    },
+                    {
+                        option: 'Python',
+                        value: 'py',
+                    },
+                    {
+                        option: 'C++',
+                        value: 'c++',
+                    },
+                ]}
+            />
+            <Icon name="close" width={24} height={24} />
+        </>
+    );
+};
+export default App;
