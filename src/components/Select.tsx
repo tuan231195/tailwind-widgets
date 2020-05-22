@@ -32,7 +32,7 @@ export function Select({
     const defaultValue = multi ? [] : null;
     const [searchInput, setSearchInput] = useState('');
     const [isOpen, setIsOpen] = useState(false);
-    const filteredItem = useMemo(() => {
+    const filteredItems = useMemo(() => {
         return filterOptions({
             items,
             optionToText,
@@ -66,7 +66,7 @@ export function Select({
     const MultiValueComponent = components?.multiValue || DefaultMultiValueRenderer;
     return (
         <>
-            <div className="text-sm inline-block" style={{ minWidth: '220px' }}>
+            <div className="text-sm inline-block" style={{ minWidth: '200px' }}>
                 {label && <h4 className={'font-bold'}>{label}</h4>}
                 <div
                     onClick={() => {
@@ -79,120 +79,203 @@ export function Select({
                 >
                     <div className="my-2 bg-white p-1 flex border border-gray-200 rounded">
                         <div className="flex flex-auto flex-wrap">
-                            {multi && (
-                                <>
-                                    {selectedOptions.map(option => (
-                                        <MultiValueComponent
-                                            key={option.value}
-                                            item={option}
-                                            selectedValue={value}
-                                            optionToText={optionToText}
-                                            onRemove={e => {
-                                                onChange(e, {
-                                                    option,
-                                                    value: value.filter(element => element !== option.value),
-                                                });
-                                            }}
-                                        />
-                                    ))}
-                                    <ContentEditable
-                                        html={searchInput}
-                                        ref={searchInputRef}
-                                        placeholder={placeholder}
-                                        onChange={e => {
-                                            setSearchInput((e.target as any).value);
-                                        }}
-                                        className={'break-all p-1 px-2 outline-none text-gray-800'}
-                                        onFocus={() => {
-                                            setIsOpen(true);
-                                        }}
-                                    />
-                                </>
-                            )}
-                            {!multi && (
-                                <div className={'p-1 px-2 w-full'}>
-                                    {(!SingleValueComponent || !selectedOptions[0]) && (
-                                        <ContentEditable
-                                            html={
-                                                searchInput ||
-                                                (selectedOptions[0] && optionToText(selectedOptions[0])) ||
-                                                ''
-                                            }
-                                            ref={searchInputRef}
-                                            onInput={e => {
-                                                setSearchInput((e.target as any).innerText);
-                                            }}
-                                            onKeyPress={e => {
-                                                if (!searchInput) {
-                                                    (e.target as any).innerText = '';
-                                                }
-                                            }}
-                                            className={'break-all outline-none text-gray-800'}
-                                            onFocus={() => {
-                                                setIsOpen(true);
-                                            }}
-                                        />
-                                    )}
-                                    {SingleValueComponent && selectedOptions[0] && (
-                                        <SingleValueComponent
-                                            option={selectedOptions[0].option}
-                                            value={selectedOptions[0].value}
-                                            onOpen={() => setIsOpen(!isOpen)}
-                                        />
-                                    )}
-                                </div>
-                            )}
+                            {multi &&
+                                renderMultiValueInput({
+                                    component: MultiValueComponent,
+                                    searchInput,
+                                    setSearchInput,
+                                    setIsOpen,
+                                    onRemove: (e, item) => {
+                                        onChange(e, {
+                                            option: item,
+                                            value: value.filter(element => element !== item.value),
+                                        });
+                                    },
+                                    value,
+                                    optionToText,
+                                    selectedOptions,
+                                    placeholder,
+                                    inputRef: searchInputRef,
+                                })}
+                            {!multi &&
+                                renderSingleValueInput({
+                                    setIsOpen,
+                                    isOpen,
+                                    searchInput,
+                                    setSearchInput,
+                                    optionToText,
+                                    component: SingleValueComponent,
+                                    inputRef: searchInputRef,
+                                    selectedOption: selectedOptions[0],
+                                })}
                         </div>
 
                         <div className={'w-4 mr-1'}>
-                            {showClear && (searchInput || !isEmpty(value)) && (
-                                <button
-                                    className="cursor-pointer h-full flex items-center justify-center text-black"
-                                    onClick={e => {
+                            {showClear &&
+                                (searchInput || !isEmpty(value)) &&
+                                renderClose({
+                                    onClose: e => {
                                         onChange(e, { value: defaultValue, option: null });
                                         setIsOpen(false);
-                                    }}
-                                >
-                                    <Icon name={'close'} width={12} height={12} />
-                                </button>
-                            )}
+                                    },
+                                })}
                         </div>
 
-                        <div className="w-4  mr-2 flex items-center">
-                            <button
-                                className="cursor-pointer w-4 h-4 flex items-center justify-center text-gray-600"
-                                onClick={e => {
-                                    setIsOpen(!isOpen);
-                                    if (isOpen) {
-                                        e.stopPropagation();
-                                    }
-                                }}
-                            >
-                                <Icon name={'chevron-down'} width={12} height={12} />
-                            </button>
-                        </div>
+                        {renderArrowButton({ isOpen, setIsOpen })}
                     </div>
                 </div>
-                {isOpen && (
-                    <div className="shadow w-full left-0 rounded overflow-y-auto">
-                        <ul className="flex flex-col w-full">
-                            {filteredItem.map(item => (
-                                <li
-                                    key={item.value}
-                                    tabIndex={0}
-                                    className="cursor-pointer w-full"
-                                    onClick={e => {
-                                        select(e, item);
-                                    }}
-                                >
-                                    <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                {isOpen && renderList({ onSelect: select, items: filteredItems, component: OptionComponent })}
             </div>
         </>
+    );
+}
+
+function renderMultiValueInput({
+    component: MultiValueComponent,
+    inputRef,
+    selectedOptions,
+    optionToText,
+    searchInput,
+    placeholder,
+    setSearchInput,
+    setIsOpen,
+    value,
+    onRemove,
+}) {
+    return (
+        <>
+            {selectedOptions.map(option => (
+                <MultiValueComponent
+                    key={option.value}
+                    item={option}
+                    selectedValue={value}
+                    optionToText={optionToText}
+                    onRemove={e => {
+                        onRemove(e, option);
+                    }}
+                />
+            ))}
+            <ContentEditable
+                html={searchInput}
+                ref={inputRef}
+                placeholder={placeholder}
+                onChange={e => {
+                    setSearchInput((e.target as any).value);
+                }}
+                className={'break-all p-1 px-2 outline-none text-gray-800'}
+                onFocus={() => {
+                    setIsOpen(true);
+                }}
+            />
+        </>
+    );
+}
+
+function renderSingleValueInput({
+    component: SingleValueComponent,
+    inputRef,
+    selectedOption,
+    optionToText,
+    searchInput,
+    setSearchInput,
+    setIsOpen,
+    isOpen,
+}) {
+    return (
+        <div className={'p-1 px-2 w-full'}>
+            {(!SingleValueComponent || !selectedOption) && (
+                <ContentEditable
+                    html={searchInput || (selectedOption && optionToText(selectedOption)) || ''}
+                    ref={inputRef}
+                    onInput={e => {
+                        setSearchInput((e.target as any).innerText);
+                    }}
+                    onKeyPress={e => {
+                        if (!searchInput) {
+                            (e.target as any).innerText = '';
+                        }
+                    }}
+                    className={'break-all outline-none text-gray-800'}
+                    onFocus={() => {
+                        setIsOpen(true);
+                    }}
+                />
+            )}
+            {SingleValueComponent && selectedOption && (
+                <SingleValueComponent
+                    option={selectedOption.option}
+                    value={selectedOption.value}
+                    onOpen={() => setIsOpen(!isOpen)}
+                />
+            )}
+        </div>
+    );
+}
+
+function renderClose({ onClose }: { onClose: Function }) {
+    return (
+        <div className={'w-4 mr-1'}>
+            <button
+                className="cursor-pointer h-full flex items-center justify-center text-black"
+                onClick={e => {
+                    onClose(e);
+                }}
+            >
+                <Icon name={'close'} width={12} height={12} />
+            </button>
+        </div>
+    );
+}
+
+function renderArrowButton({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: Function }) {
+    return (
+        <div className="w-4  mr-2 flex items-center">
+            <button
+                className="cursor-pointer w-4 h-4 flex items-center justify-center text-gray-600"
+                onClick={e => {
+                    setIsOpen(!isOpen);
+                    if (isOpen) {
+                        e.stopPropagation();
+                    }
+                }}
+            >
+                <Icon name={'chevron-down'} width={12} height={12} />
+            </button>
+        </div>
+    );
+}
+
+function renderList({
+    onSelect,
+    items,
+    component: OptionComponent,
+}: {
+    onSelect: Function;
+    items: any[];
+    component: any;
+}) {
+    return (
+        <div className="shadow w-full left-0 rounded overflow-y-auto">
+            <ul className="flex flex-col w-full">
+                {items.map(item => (
+                    <li
+                        key={item.value}
+                        tabIndex={0}
+                        className="cursor-pointer w-full"
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                                onSelect(e, item);
+                            }
+                        }}
+                        onClick={e => {
+                            onSelect(e, item);
+                        }}
+                    >
+                        <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }
 
