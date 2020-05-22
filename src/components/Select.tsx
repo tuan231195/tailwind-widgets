@@ -5,18 +5,24 @@ import ContentEditable from 'react-contenteditable';
 export type SelectProps = {
     options: { value: any; option: any }[];
     value: any;
+    components?: { singleValue?: React.FC<any>; option?: React.FC<any>; multiValue?: React.FC<any> };
     label?: string;
     placeholder?: string;
     multi?: boolean;
     onChange?: (e, { value, option }) => void;
     optionToText?: (option: any) => string;
     closeOnSelect?: boolean;
+    showClear?: boolean;
 };
 
 export function Select({
     options: items,
     value = [],
     closeOnSelect = true,
+    showClear,
+    components = {
+        option: DefaultOptionRender,
+    },
     multi,
     optionToText = ({ option = '' } = {}) => option,
     onChange = ({ option }) => option,
@@ -53,14 +59,17 @@ export function Select({
         },
         [value]
     );
+    const SingleValueComponent = components?.singleValue;
+    const OptionComponent = components?.option || DefaultOptionRender;
+    const MultiValueComponent = components?.multiValue || DefaultMultiValueRenderer;
     return (
         <div className="text-sm inline-block" style={{ minWidth: '200px' }}>
             <div
                 onClick={() => {
-                    if (searchInputRef.current.el) {
+                    if (searchInputRef.current?.el) {
                         searchInputRef.current.el.current.focus();
                     } else {
-                        searchInputRef.current.focus();
+                        searchInputRef.current?.focus();
                     }
                 }}
             >
@@ -69,7 +78,7 @@ export function Select({
                         {multi && (
                             <>
                                 {selectedOptions.map(option => (
-                                    <DefaultMultiValueRenderer
+                                    <MultiValueComponent
                                         key={option.value}
                                         item={option}
                                         selectedValue={value}
@@ -88,7 +97,7 @@ export function Select({
                                     onChange={e => {
                                         setSearchInput((e.target as any).value);
                                     }}
-                                    className={'p-1 px-2 outline-none text-gray-800'}
+                                    className={'break-all p-1 px-2 outline-none text-gray-800'}
                                     onFocus={() => {
                                         setIsOpen(true);
                                     }}
@@ -96,27 +105,41 @@ export function Select({
                             </>
                         )}
                         {!multi && (
-                            <input
-                                ref={searchInputRef}
-                                value={searchInput || optionToText(selectedOptions[0])}
-                                className="p-1 px-2 appearance-none outline-none w-full text-gray-800"
-                                onChange={e => {
-                                    setSearchInput(e.target.value);
-                                }}
-                                onFocus={() => {
-                                    setIsOpen(true);
-                                }}
-                                onKeyPress={e => {
-                                    if (!searchInput) {
-                                        (e.target as any).value = '';
-                                    }
-                                }}
-                            />
+                            <div className={'p-1 px-2 w-full'}>
+                                {(!SingleValueComponent || !selectedOptions[0]) && (
+                                    <ContentEditable
+                                        html={
+                                            searchInput ||
+                                            (selectedOptions[0] && optionToText(selectedOptions[0])) ||
+                                            ''
+                                        }
+                                        ref={searchInputRef}
+                                        onChange={e => {
+                                            setSearchInput((e.target as any).value);
+                                        }}
+                                        className={'break-all outline-none text-gray-800'}
+                                        onFocus={() => {
+                                            setIsOpen(true);
+                                        }}
+                                        onKeyPress={e => {
+                                            if (!searchInput) {
+                                                (e.target as any).innerText = '';
+                                            }
+                                        }}
+                                    />
+                                )}
+                                {SingleValueComponent && selectedOptions[0] && (
+                                    <SingleValueComponent
+                                        option={selectedOptions[0].option}
+                                        value={selectedOptions[0].value}
+                                    />
+                                )}
+                            </div>
                         )}
                     </div>
 
-                    <div className={'w-6 mr-2'}>
-                        {(searchInput || !isEmpty(value)) && (
+                    <div className={'w-4 mr-1'}>
+                        {showClear && (searchInput || !isEmpty(value)) && (
                             <button
                                 className="cursor-pointer h-full flex items-center justify-center text-black"
                                 onClick={e => {
@@ -124,17 +147,22 @@ export function Select({
                                     setIsOpen(false);
                                 }}
                             >
-                                <Icon name={'close'} width={16} height={16} />
+                                <Icon name={'close'} width={12} height={12} />
                             </button>
                         )}
                     </div>
 
-                    <div className="w-8 border-gray-200 pl-2 border-l flex items-center pr-3">
+                    <div className="w-4  mr-2 flex items-center">
                         <button
-                            className="cursor-pointer w-6 h-6 flex items-center justify-center text-gray-600"
-                            onClick={() => setIsOpen(!isOpen)}
+                            className="cursor-pointer w-4 h-4 flex items-center justify-center text-gray-600"
+                            onClick={e => {
+                                setIsOpen(!isOpen);
+                                if (isOpen) {
+                                    e.stopPropagation();
+                                }
+                            }}
                         >
-                            <Icon name={'chevron-down'} width={16} height={16} />
+                            <Icon name={'chevron-down'} width={12} height={12} />
                         </button>
                     </div>
                 </div>
@@ -151,7 +179,7 @@ export function Select({
                                     select(e, item);
                                 }}
                             >
-                                <DefaultOptionRender item={item} selectedValue={value} optionToText={optionToText} />
+                                <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
                             </li>
                         ))}
                     </ul>
@@ -200,7 +228,7 @@ function DefaultMultiValueRenderer({
     onRemove: Function;
 }) {
     return (
-        <div className="flex justify-center items-center m-1 py-1 px-2 bg-white rounded-full text-teal-700 bg-teal-100 border border-teal-300 ">
+        <div className="flex text-xs justify-center items-center m-1 py-1 px-2 bg-white rounded-full text-teal-700 bg-teal-100 border border-teal-300 ">
             <div className="leading-none max-w-full flex-initial">{optionToText(item)}</div>
             <button
                 className="cursor-pointer ml-1 h-full flex items-center justify-center text-teal-700"
