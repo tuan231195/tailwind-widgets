@@ -32,6 +32,7 @@ export function Select({
     const defaultValue = multi ? [] : null;
     const [searchInput, setSearchInput] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const rootRef = useRef<any>();
     const filteredItems = useMemo(() => {
         return filterOptions({
             items,
@@ -41,6 +42,24 @@ export function Select({
     }, [searchInput]);
     useEffect(() => {
         setSearchInput(isOpen ? searchInput : '');
+        const keydownHandler = e => {
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+        const clickHandler = e => {
+            if (rootRef.current?.contains(e.target)) {
+                return;
+            }
+            setIsOpen(false);
+        };
+        if (isOpen) {
+            document.addEventListener('keydown', keydownHandler);
+            document.addEventListener('click', clickHandler);
+        } else {
+            document.removeEventListener('keydown', keydownHandler);
+            document.removeEventListener('click', clickHandler);
+        }
     }, [isOpen]);
     const selectedOptions = items.filter(item => isSelected({ item, selectedValue: value }));
     const searchInputRef = useRef<any>();
@@ -66,7 +85,7 @@ export function Select({
     const MultiValueComponent = components?.multiValue || DefaultMultiValueRenderer;
     return (
         <>
-            <div className="text-sm inline-block" style={{ minWidth: '200px' }}>
+            <div className="text-sm inline-block" style={{ minWidth: '200px' }} ref={rootRef}>
                 {label && <h4 className={'font-bold'}>{label}</h4>}
                 <div
                     onClick={() => {
@@ -124,7 +143,14 @@ export function Select({
                         {renderArrowButton({ isOpen, setIsOpen })}
                     </div>
                 </div>
-                {isOpen && renderList({ onSelect: select, items: filteredItems, component: OptionComponent })}
+                {isOpen &&
+                    renderList({
+                        onSelect: select,
+                        value,
+                        optionToText,
+                        items: filteredItems,
+                        component: OptionComponent,
+                    })}
             </div>
         </>
     );
@@ -159,6 +185,11 @@ function renderMultiValueInput({
                 html={searchInput}
                 ref={inputRef}
                 placeholder={placeholder}
+                onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                    }
+                }}
                 onChange={e => {
                     setSearchInput((e.target as any).value);
                 }}
@@ -248,10 +279,14 @@ function renderArrowButton({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
 function renderList({
     onSelect,
     items,
+    value,
+    optionToText,
     component: OptionComponent,
 }: {
     onSelect: Function;
+    value: any;
     items: any[];
+    optionToText: Function;
     component: any;
 }) {
     return (
@@ -263,6 +298,7 @@ function renderList({
                         tabIndex={0}
                         className="cursor-pointer w-full"
                         onKeyDown={e => {
+                            console.log(e.key);
                             if (e.key === 'Enter') {
                                 onSelect(e, item);
                             }
