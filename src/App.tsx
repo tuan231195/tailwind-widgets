@@ -37,6 +37,7 @@ const CustomSingleSelect: React.FC = () => {
             <Select
                 value={value}
                 onChange={(e, { value }) => setValue(value)}
+                label={'Multi select'}
                 options={[
                     {
                         option: {
@@ -62,9 +63,9 @@ const CustomSingleSelect: React.FC = () => {
                 ]}
                 optionToText={({ option: { name } }) => name}
                 components={{
-                    singleValue: ({ option }: { option: any }) => {
+                    singleValue: ({ option, onOpen }: { option: any; onOpen: Function }) => {
                         return (
-                            <span className={'flex items-center'}>
+                            <span className={'flex items-center'} onClick={() => onOpen()}>
                                 <Avatar src={option.avatar} />
                                 <span className={'ml-2 flex-grow'}>{option.name}</span>
                             </span>
@@ -124,7 +125,7 @@ const MultiSelect: React.FC = () => {
 
 function App() {
     return (
-        <div className={'m-5'}>
+        <div className={'container'}>
             <SingleSelect />
             <MultiSelect />
             <CustomSingleSelect />

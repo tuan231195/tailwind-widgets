@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "react": "^16.10.2",
-    "react-contenteditable": "^3.3.4",
+    "@vdtn359/content-editable": "^3.3.3",
     "react-dom": "^16.10.2"
   }
 }
