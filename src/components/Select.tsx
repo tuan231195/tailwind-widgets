@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import ContentEditable from '@vdtn359/content-editable';
+import { Popover } from './Popover';
+import {root} from "postcss";
 
 export type SelectProps = {
     options: { value: any; option: any }[];
@@ -146,6 +148,7 @@ export function Select({
                 {isOpen &&
                     renderList({
                         onSelect: select,
+                        parentRef: rootRef,
                         value,
                         optionToText,
                         items: filteredItems,
@@ -278,40 +281,44 @@ function renderArrowButton({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
 
 function renderList({
     onSelect,
+    parentRef,
     items,
     value,
     optionToText,
     component: OptionComponent,
 }: {
     onSelect: Function;
+    parentRef: any;
     value: any;
     items: any[];
     optionToText: Function;
     component: any;
 }) {
     return (
-        <div className="shadow w-full left-0 rounded overflow-y-auto">
-            <ul className="flex flex-col w-full">
-                {items.map(item => (
-                    <li
-                        key={item.value}
-                        tabIndex={0}
-                        className="cursor-pointer w-full"
-                        onKeyDown={e => {
-                            console.log(e.key);
-                            if (e.key === 'Enter') {
+        <Popover parentRef={parentRef} offset={{ left: '0', top: '100%' }}>
+            <div className="shadow bg-white w-full rounded overflow-y-auto">
+                <ul className="flex flex-col w-full">
+                    {items.map(item => (
+                        <li
+                            key={item.value}
+                            tabIndex={0}
+                            className="cursor-pointer w-full"
+                            onKeyDown={e => {
+                                console.log(e.key);
+                                if (e.key === 'Enter') {
+                                    onSelect(e, item);
+                                }
+                            }}
+                            onClick={e => {
                                 onSelect(e, item);
-                            }
-                        }}
-                        onClick={e => {
-                            onSelect(e, item);
-                        }}
-                    >
-                        <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
-                    </li>
-                ))}
-            </ul>
-        </div>
+                            }}
+                        >
+                            <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </Popover>
     );
 }
 
