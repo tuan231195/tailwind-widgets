@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Portal from './Portal';
-import { useEffect, useState } from 'react';
+import { useBoundingClientRect } from '../hooks/use-measure';
 
 export function Popover({
     parentRef,
@@ -11,17 +11,15 @@ export function Popover({
     children: any;
     parentRef: any;
 }) {
-    const [styles, setStyles] = useState<any>({});
-
-    useEffect(() => {
-        const rect = parentRef.current?.getBoundingClientRect();
-        setStyles({
+    const rect = useBoundingClientRect(parentRef.current);
+    const styles = useMemo(() => {
+        return {
             left: window.scrollX + rect.x,
             top: window.scrollY + rect.y,
             width: rect.width,
             transform: `translate(${toPx(rect.width, offset.left)}px, ${toPx(rect.height, offset.top)}px)`,
-        });
-    }, [parentRef]);
+        };
+    }, [rect]);
 
     return (
         <Portal>

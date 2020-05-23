@@ -296,7 +296,7 @@ function renderList({
 }) {
     return (
         <Popover parentRef={parentRef} offset={{ left: '0', top: '100%' }}>
-            <div className="shadow bg-white w-full rounded overflow-y-auto">
+            <div className="text-sm shadow bg-white w-full rounded overflow-y-auto">
                 <ul className="flex flex-col w-full">
                     {items.map(item => (
                         <li
@@ -304,7 +304,6 @@ function renderList({
                             tabIndex={0}
                             className="cursor-pointer w-full"
                             onKeyDown={e => {
-                                console.log(e.key);
                                 if (e.key === 'Enter') {
                                     onSelect(e, item);
                                 }

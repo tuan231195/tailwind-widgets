@@ -126,9 +126,11 @@ const MultiSelect: React.FC = () => {
 function App() {
     return (
         <div className={'container'}>
+            <div style={{ height: 1000 }} />
             <SingleSelect />
             <MultiSelect />
             <CustomSingleSelect />
+            <div style={{ height: 1000 }} />
         </div>
     );
 }
