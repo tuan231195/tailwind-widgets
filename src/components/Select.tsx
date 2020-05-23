@@ -35,6 +35,7 @@ export function Select({
     const [searchInput, setSearchInput] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const rootRef = useRef<any>();
+    const selectBoxRef = useRef<any>();
     const filteredItems = useMemo(() => {
         return filterOptions({
             items,
@@ -44,8 +45,14 @@ export function Select({
     }, [searchInput]);
     useEffect(() => {
         setSearchInput(isOpen ? searchInput : '');
-        const keydownHandler = e => {
+        const keyHandler = e => {
             if (e.key === 'Escape') {
+                setIsOpen(false);
+            }
+            if (e.key === 'Tab') {
+                if (rootRef.current?.contains(e.target)) {
+                    return;
+                }
                 setIsOpen(false);
             }
         };
@@ -56,12 +63,13 @@ export function Select({
             setIsOpen(false);
         };
         if (isOpen) {
-            document.addEventListener('keydown', keydownHandler);
+            document.addEventListener('keyup', keyHandler);
             document.addEventListener('click', clickHandler);
-        } else {
-            document.removeEventListener('keydown', keydownHandler);
-            document.removeEventListener('click', clickHandler);
         }
+        return () => {
+            document.removeEventListener('keyup', keyHandler);
+            document.removeEventListener('click', clickHandler);
+        };
     }, [isOpen]);
     const selectedOptions = items.filter(item => isSelected({ item, selectedValue: value }));
     const searchInputRef = useRef<any>();
@@ -155,6 +163,7 @@ export function Select({
                         onSelect: select,
                         value,
                         optionToText,
+                        selectBoxRef,
                         items: filteredItems,
                         component: OptionComponent,
                     })}
@@ -195,6 +204,8 @@ function renderMultiValueInput({
                 onKeyDown={e => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
+                    } else if (e.key === 'Tab') {
+                        setIsOpen(false);
                     }
                 }}
                 onChange={e => {
@@ -203,9 +214,6 @@ function renderMultiValueInput({
                 className={'break-all p-1 px-2 outline-none text-gray-800'}
                 onFocus={() => {
                     setIsOpen(true);
-                }}
-                onBlur={() => {
-                    setIsOpen(false);
                 }}
             />
         </>
@@ -231,6 +239,11 @@ function renderSingleValueInput({
                     onInput={e => {
                         setSearchInput((e.target as any).innerText);
                     }}
+                    onKeyDown={e => {
+                        if (e.key === 'Tab') {
+                            setIsOpen(false);
+                        }
+                    }}
                     onKeyPress={e => {
                         if (!searchInput) {
                             (e.target as any).innerText = '';
@@ -239,9 +252,6 @@ function renderSingleValueInput({
                     className={'break-all outline-none text-gray-800'}
                     onFocus={() => {
                         setIsOpen(true);
-                    }}
-                    onBlur={() => {
-                        setIsOpen(false);
                     }}
                 />
             )}
@@ -288,10 +298,12 @@ function renderList({
     onSelect,
     items,
     value,
+    selectBoxRef,
     optionToText,
     component: OptionComponent,
 }: {
     onSelect: Function;
+    selectBoxRef: any;
     value: any;
     items: any[];
     optionToText: Function;
@@ -299,6 +311,7 @@ function renderList({
 }) {
     return (
         <div
+            ref={selectBoxRef}
             className="absolute z-10 text-sm shadow bg-white w-full rounded overflow-y-auto"
             style={{
                 top: '100%',
@@ -316,7 +329,7 @@ function renderList({
                                 onSelect(e, item);
                             }
                         }}
-                        onClick={e => {
+                        onMouseDown={e => {
                             onSelect(e, item);
                         }}
                     >
