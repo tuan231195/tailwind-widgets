@@ -1,12 +1,12 @@
 import React from 'react';
 
-const iconMap = {
-    close: require('../icons/close.svg').default,
-    'chevron-down': require('../icons/chevron-down.svg').default,
-};
+// @ts-ignore
+const iconsContext = require.context('../icons/', true, /svg$/);
 
-export function Icon({ name, width, height }: { name: keyof typeof iconMap; width?: number; height?: number }) {
-    const icon = iconMap[name];
+export type SvgIcon = 'close' | 'chevron-down';
+
+export function Icon({ name, width, height }: { name: SvgIcon; width?: number; height?: number }) {
+    const icon = iconsContext(`./${name}.svg`).default;
     return (
         <svg viewBox={icon.viewBox} width={width} height={height}>
             <use xlinkHref={`#${icon.id}`} />

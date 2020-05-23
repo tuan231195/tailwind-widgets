@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon';
 import ContentEditable from '@vdtn359/content-editable';
 import { Popover } from './Popover';
-import {root} from "postcss";
+import { root } from 'postcss';
 
 export type SelectProps = {
     options: { value: any; option: any }[];
@@ -87,7 +87,7 @@ export function Select({
     const MultiValueComponent = components?.multiValue || DefaultMultiValueRenderer;
     return (
         <>
-            <div className="text-sm inline-block" style={{ minWidth: '200px' }} ref={rootRef}>
+            <div className="text-sm inline-block relative" style={{ minWidth: '200px' }} ref={rootRef}>
                 {label && <h4 className={'font-bold'}>{label}</h4>}
                 <div
                     onClick={() => {
@@ -142,13 +142,17 @@ export function Select({
                                 })}
                         </div>
 
-                        {renderArrowButton({ isOpen, setIsOpen })}
+                        {renderArrowButton({
+                            onOpen: e => {
+                                setIsOpen(!isOpen);
+                                e.stopPropagation();
+                            },
+                        })}
                     </div>
                 </div>
                 {isOpen &&
                     renderList({
                         onSelect: select,
-                        parentRef: rootRef,
                         value,
                         optionToText,
                         items: filteredItems,
@@ -200,6 +204,9 @@ function renderMultiValueInput({
                 onFocus={() => {
                     setIsOpen(true);
                 }}
+                onBlur={() => {
+                    setIsOpen(false);
+                }}
             />
         </>
     );
@@ -233,6 +240,9 @@ function renderSingleValueInput({
                     onFocus={() => {
                         setIsOpen(true);
                     }}
+                    onBlur={() => {
+                        setIsOpen(false);
+                    }}
                 />
             )}
             {SingleValueComponent && selectedOption && (
@@ -248,29 +258,24 @@ function renderSingleValueInput({
 
 function renderClose({ onClose }: { onClose: Function }) {
     return (
-        <div className={'w-4 mr-1'}>
-            <button
-                className="cursor-pointer h-full flex items-center justify-center text-black"
-                onClick={e => {
-                    onClose(e);
-                }}
-            >
-                <Icon name={'close'} width={12} height={12} />
-            </button>
-        </div>
+        <button
+            className="cursor-pointer h-full flex items-center justify-center text-black"
+            onClick={e => {
+                onClose(e);
+            }}
+        >
+            <Icon name={'close'} width={12} height={12} />
+        </button>
     );
 }
 
-function renderArrowButton({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: Function }) {
+function renderArrowButton({ onOpen }: { onOpen: Function }) {
     return (
         <div className="w-4  mr-2 flex items-center">
             <button
                 className="cursor-pointer w-4 h-4 flex items-center justify-center text-gray-600"
                 onClick={e => {
-                    setIsOpen(!isOpen);
-                    if (isOpen) {
-                        e.stopPropagation();
-                    }
+                    onOpen(e);
                 }}
             >
                 <Icon name={'chevron-down'} width={12} height={12} />
@@ -281,43 +286,45 @@ function renderArrowButton({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
 
 function renderList({
     onSelect,
-    parentRef,
     items,
     value,
     optionToText,
     component: OptionComponent,
 }: {
     onSelect: Function;
-    parentRef: any;
     value: any;
     items: any[];
     optionToText: Function;
     component: any;
 }) {
     return (
-        <Popover parentRef={parentRef} offset={{ left: '0', top: '100%' }}>
-            <div className="text-sm shadow bg-white w-full rounded overflow-y-auto">
-                <ul className="flex flex-col w-full">
-                    {items.map(item => (
-                        <li
-                            key={item.value}
-                            tabIndex={0}
-                            className="cursor-pointer w-full"
-                            onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                    onSelect(e, item);
-                                }
-                            }}
-                            onClick={e => {
+        <div
+            className="absolute z-10 text-sm shadow bg-white w-full rounded overflow-y-auto"
+            style={{
+                top: '100%',
+                left: 0,
+            }}
+        >
+            <ul className="flex flex-col w-full">
+                {items.map(item => (
+                    <li
+                        key={item.value}
+                        tabIndex={0}
+                        className="cursor-pointer w-full"
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
                                 onSelect(e, item);
-                            }}
-                        >
-                            <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </Popover>
+                            }
+                        }}
+                        onClick={e => {
+                            onSelect(e, item);
+                        }}
+                    >
+                        <OptionComponent item={item} selectedValue={value} optionToText={optionToText} />
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }
 

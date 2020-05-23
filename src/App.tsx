@@ -8,6 +8,7 @@ const SingleSelect: React.FC = () => {
     return (
         <>
             <Select
+                showClear={true}
                 value={value}
                 onChange={(e, { value }) => setValue(value)}
                 options={[
